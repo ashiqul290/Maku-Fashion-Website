@@ -168,10 +168,10 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
         {/* Right: Product Information & Purchase Controls */}
         <div className="lg:col-span-5 space-y-6">
           <div>
-            {/* Fabric / Material Tag */}
+            {/* Material Tag */}
             <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#B38838]">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>{product.material || 'Authentic Modest Wear'}</span>
+              <span>{product.material || 'Kitchenware'}</span>
             </div>
 
             {/* Product Title */}
@@ -202,8 +202,8 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
             {descriptionSections ? (
               [
                 { title: 'Overview', text: descriptionSections[1] },
-                { title: 'Fabric & Feel', text: descriptionSections[2] },
-                { title: 'Features & Styling', text: descriptionSections[3] }
+                { title: 'Materials', text: descriptionSections[2] },
+                { title: 'Product Features', text: descriptionSections[3] }
               ].filter(section => section.text.trim())
                 .map(section => (
                   <section key={section.title}>
@@ -247,9 +247,9 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
             <div className="space-y-2">
               <div className="flex justify-between items-center text-xs">
                 <span className="font-medium text-[#1F1D1B] uppercase tracking-wider">
-                  Size / Length: <span className="font-bold text-[#B38838]">{selectedSize}</span>
+                  Option: <span className="font-bold text-[#B38838]">{selectedSize}</span>
                 </span>
-                <span className="text-[11px] text-[#9E8E81]">Modest Full Cut</span>
+                <span className="text-[11px] text-[#9E8E81]">Available options</span>
               </div>
               <div className="flex flex-wrap gap-2">
                 {product.sizes.map(size => (
@@ -351,7 +351,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
             </div>
             <div className="flex flex-col items-center gap-1">
               <ShieldCheck className="w-4 h-4 text-[#B38838]" />
-              <span>100% Modest Cut</span>
+              <span>Kitchen Essentials</span>
             </div>
             <div className="flex flex-col items-center gap-1">
               <RotateCcw className="w-4 h-4 text-[#B38838]" />
@@ -386,7 +386,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                 : 'text-[#8C7C6E] hover:text-[#1F1D1B]'
             }`}
           >
-            Size & Fitting Guide
+            Options & Capacity
             {activeTab === 'sizing' && (
               <span className="absolute bottom-0 left-0 w-full h-[2px] bg-[#B38838]" />
             )}
@@ -412,7 +412,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs text-[#5C5044] leading-relaxed">
             <div className="space-y-3">
               <h4 className="font-serif text-sm font-bold text-[#1F1D1B]">
-                Fabric Specifications
+                Product Specifications
               </h4>
               <p>
                 <strong>Material:</strong> {product.material}
@@ -421,18 +421,18 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                 <strong>Available Colors:</strong> {product.colors?.join(', ')}
               </p>
               <p>
-                <strong>Opacity:</strong> 100% Non-transparent & Non-sheer
+                <strong>Available Options:</strong> {product.sizes?.join(', ')}
               </p>
               <p>
-                <strong>Care Instructions:</strong> Dry clean or gentle cold hand wash with mild abaya shampoo. Hang dry in shade. Low-temp reverse ironing.
+                <strong>Care Instructions:</strong> Follow the care instructions supplied with the product.
               </p>
             </div>
             <div className="space-y-3">
               <h4 className="font-serif text-sm font-bold text-[#1F1D1B]">
-                Authenticity Guarantee
+                Product Details
               </h4>
               <p>
-                Every stitch is inspected by Arabian Saaj master tailors to guarantee neat finishing, sturdy lock-stitching on seams, and durable snaps that withstand daily wear.
+                Review the product description and photos for details about the cookware or appliance included.
               </p>
             </div>
           </div>
@@ -442,43 +442,23 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
         {activeTab === 'sizing' && (
           <div className="space-y-4 text-xs text-[#5C5044] leading-relaxed">
             <h4 className="font-serif text-sm font-bold text-[#1F1D1B]">
-              Standard Abaya & Borka Length Chart
+              Available Options & Capacities
             </h4>
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-[#E8DFD8] text-[#1F1D1B] font-semibold">
-                    <th className="py-2">Abaya Size</th>
-                    <th className="py-2">Recommended Height</th>
-                    <th className="py-2">Bust / Width</th>
-                    <th className="py-2">Length from Shoulder</th>
+                    <th className="py-2">Option</th>
+                    <th className="py-2">Product</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#F5EFEB]">
-                  <tr>
-                    <td className="py-2 font-medium text-[#1F1D1B]">Size 52</td>
-                    <td className="py-2">5'0" – 5'2"</td>
-                    <td className="py-2">Free size modest cut (up to 44")</td>
-                    <td className="py-2">52 inches</td>
-                  </tr>
-                  <tr>
-                    <td className="py-2 font-medium text-[#1F1D1B]">Size 54</td>
-                    <td className="py-2">5'3" – 5'4"</td>
-                    <td className="py-2">Free size modest cut (up to 46")</td>
-                    <td className="py-2">54 inches</td>
-                  </tr>
-                  <tr>
-                    <td className="py-2 font-medium text-[#1F1D1B]">Size 56</td>
-                    <td className="py-2">5'5" – 5'6"</td>
-                    <td className="py-2">Free size modest cut (up to 48")</td>
-                    <td className="py-2">56 inches</td>
-                  </tr>
-                  <tr>
-                    <td className="py-2 font-medium text-[#1F1D1B]">Size 58</td>
-                    <td className="py-2">5'7" & above</td>
-                    <td className="py-2">Free size modest cut (up to 50")</td>
-                    <td className="py-2">58 inches</td>
-                  </tr>
+                  {product.sizes?.map(option => (
+                    <tr key={option}>
+                      <td className="py-2 font-medium text-[#1F1D1B]">{option}</td>
+                      <td className="py-2">{product.name}</td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
@@ -507,7 +487,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                 Cash on Delivery Policy
               </h4>
               <p>
-                Pay securely in cash directly to the delivery rider once your parcel arrives. You can inspect the outer packaging and ensure your peaceful modest shopping experience.
+                Pay cash to the delivery rider once your parcel arrives. Check your order details before confirming your purchase.
               </p>
             </div>
           </div>

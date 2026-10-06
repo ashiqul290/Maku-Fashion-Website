@@ -173,7 +173,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
       <div className="max-w-3xl mx-auto px-4 py-16 text-center space-y-4">
         <h2 className="font-serif text-2xl font-bold text-[#1F1D1B]">Your cart is empty</h2>
         <p className="text-xs text-[#786A5E]">
-          You do not have any modest items in your cart to checkout.
+          Add cookware or a kitchen appliance to your cart before checkout.
         </p>
         <button
           onClick={onBackToCart}

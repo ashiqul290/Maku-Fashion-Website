@@ -40,10 +40,9 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onExploreShop }) => {
 
         <div className="md:col-span-6 rounded-2xl overflow-hidden border border-[#E8DFD8] aspect-[4/5] bg-[#FAF6F0]">
           <img
-            src="https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=800&q=80"
-            alt="Arabian Saaj Artisanal Modest Wear"
-            referrerPolicy="no-referrer"
-            className="w-full h-full object-cover object-top"
+            src="/uploads/cookware-02-red-ceramic-set.jpg"
+            alt="Red ceramic cookware set"
+            className="w-full h-full object-cover object-center"
           />
         </div>
       </div>

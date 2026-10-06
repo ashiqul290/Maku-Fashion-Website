@@ -10,12 +10,21 @@ export interface Product {
   sizes: string[];
   stock: number;
   material: string;
+  categoryId?: string | null;
   featured: boolean;
   sale: boolean;
   status: 'in_stock' | 'out_of_stock' | 'discontinued';
   popularity?: number;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface Category {
+  _id: string;
+  name: string;
+  slug: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface CartItem {

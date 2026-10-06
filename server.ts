@@ -99,6 +99,63 @@ async function startServer() {
     }
   });
 
+  // ----------------- CATEGORY APIS -----------------
+  app.get('/api/categories', async (_req, res) => {
+    try {
+      const categories = await Database.getCategories();
+      res.json({ success: true, categories });
+    } catch (err) {
+      console.error('Error fetching categories:', err);
+      res.status(500).json({ error: 'Failed to fetch categories' });
+    }
+  });
+
+  app.post('/api/categories', authMiddleware as any, async (req: AuthenticatedRequest, res) => {
+    try {
+      const name = typeof req.body?.name === 'string' ? req.body.name.trim() : '';
+      if (!name || name.length > 60) {
+        return res.status(400).json({ error: 'Category name must be between 1 and 60 characters.' });
+      }
+      const category = await Database.createCategory(name);
+      res.status(201).json({ success: true, category });
+    } catch (err) {
+      if (err instanceof Error && err.message.includes('already exists')) {
+        return res.status(409).json({ error: err.message });
+      }
+      console.error('Error creating category:', err);
+      res.status(500).json({ error: 'Failed to create category' });
+    }
+  });
+
+  app.put('/api/categories/:id', authMiddleware as any, async (req: AuthenticatedRequest, res) => {
+    try {
+      const name = typeof req.body?.name === 'string' ? req.body.name.trim() : '';
+      if (!name || name.length > 60) {
+        return res.status(400).json({ error: 'Category name must be between 1 and 60 characters.' });
+      }
+      const category = await Database.updateCategory(req.params.id, name);
+      if (!category) return res.status(404).json({ error: 'Category not found.' });
+      res.json({ success: true, category });
+    } catch (err) {
+      if (err instanceof Error && err.message.includes('already exists')) {
+        return res.status(409).json({ error: err.message });
+      }
+      console.error('Error updating category:', err);
+      res.status(500).json({ error: 'Failed to update category' });
+    }
+  });
+
+  app.delete('/api/categories/:id', authMiddleware as any, async (req: AuthenticatedRequest, res) => {
+    try {
+      const deleted = await Database.deleteCategory(req.params.id);
+      if (!deleted) return res.status(404).json({ error: 'Category not found.' });
+      res.json({ success: true, message: 'Category deleted successfully.' });
+    } catch (err) {
+      console.error('Error deleting category:', err);
+      res.status(500).json({ error: 'Failed to delete category' });
+    }
+  });
+
   // ----------------- PRODUCT APIS -----------------
   // GET /api/products (public, with filters: search, sort, featured, sale)
   app.get('/api/products', async (req, res) => {
@@ -134,10 +191,14 @@ async function startServer() {
   // POST /api/products (admin only)
   app.post('/api/products', authMiddleware as any, async (req: AuthenticatedRequest, res) => {
     try {
-      const { name, description, price, discountPrice, images, colors, sizes, stock, material, featured, sale } = req.body;
+      const { name, description, price, discountPrice, images, colors, sizes, stock, material, categoryId, featured, sale } = req.body;
 
       if (!name || !price) {
         return res.status(400).json({ error: 'Product name and price are required' });
+      }
+
+      if (categoryId && !(await Database.getCategories()).some(category => category._id === categoryId)) {
+        return res.status(400).json({ error: 'Selected category does not exist.' });
       }
 
       const newProduct = await Database.createProduct({
@@ -150,6 +211,7 @@ async function startServer() {
         sizes: Array.isArray(sizes) ? sizes : ['Standard'],
         stock: stock !== undefined ? Number(stock) : 15,
         material: material || 'Premium Crepe & Silk',
+        categoryId: typeof categoryId === 'string' && categoryId ? categoryId : undefined,
         featured: Boolean(featured),
         sale: Boolean(sale),
         status: Number(stock) > 0 ? 'in_stock' : 'out_of_stock'
@@ -165,6 +227,9 @@ async function startServer() {
   // PUT /api/products/:id (admin only)
   app.put('/api/products/:id', authMiddleware as any, async (req: AuthenticatedRequest, res) => {
     try {
+      if (req.body?.categoryId && !(await Database.getCategories()).some(category => category._id === req.body.categoryId)) {
+        return res.status(400).json({ error: 'Selected category does not exist.' });
+      }
       const updated = await Database.updateProduct(req.params.id, req.body);
       if (!updated) {
         return res.status(404).json({ error: 'Product not found for update' });
@@ -382,6 +447,10 @@ async function startServer() {
     } catch (err: any) {
       res.status(500).json({ error: 'Failed to process contact inquiry' });
     }
+  });
+
+  app.use('/api', (req, res) => {
+    res.status(404).json({ error: `API endpoint not found: ${req.method} ${req.path}` });
   });
 
   // ----------------- VITE MIDDLEWARE / STATIC FILES -----------------

@@ -1,17 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { Search, ShoppingBag, Menu, X, Heart, Home, Store, UserRound } from 'lucide-react';
+import { Search, ShoppingBag, Menu, X, Heart, Home, Store, UserRound, ChevronDown } from 'lucide-react';
 import { BrandLogo } from './BrandLogo.tsx';
 import { useCart } from '../context/CartContext.tsx';
 import { useWishlist } from '../context/WishlistContext.tsx';
+import { Category } from '../types.ts';
 
 interface NavbarProps {
   currentPage: string;
+  categories: Category[];
+  selectedCategoryId: string | null;
   onNavigate: (page: string, params?: any) => void;
   onOpenSearch: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   currentPage,
+  categories,
+  selectedCategoryId,
   onNavigate,
   onOpenSearch
 }) => {
@@ -19,6 +24,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   const { wishlistIds } = useWishlist();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [categoryMenuOpen, setCategoryMenuOpen] = useState(false);
+  const [mobileCategoriesOpen, setMobileCategoriesOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -35,9 +42,11 @@ export const Navbar: React.FC<NavbarProps> = ({
     { id: 'contact', label: 'Contact' }
   ];
 
-  const handleNavClick = (pageId: string) => {
+  const handleNavClick = (pageId: string, params?: { categoryId?: string }) => {
     setMobileMenuOpen(false);
-    onNavigate(pageId);
+    setCategoryMenuOpen(false);
+    setMobileCategoriesOpen(false);
+    onNavigate(pageId, params);
   };
 
   return (
@@ -68,20 +77,54 @@ export const Navbar: React.FC<NavbarProps> = ({
               {navLinks.map(link => {
                 const isActive = currentPage === link.id;
                 return (
-                  <button
-                    key={link.id}
-                    onClick={() => handleNavClick(link.id)}
-                    className={`text-sm tracking-widest uppercase transition-colors relative py-1 font-medium ${
-                      isActive
-                        ? 'text-[#1F1D1B] font-semibold'
-                        : 'text-[#6B5E51] hover:text-[#1F1D1B]'
-                    }`}
-                  >
-                    {link.label}
-                    {isActive && (
-                      <span className="absolute bottom-0 left-0 w-full h-[2px] bg-[#C5A059] rounded-full" />
+                  <React.Fragment key={link.id}>
+                    <button
+                      onClick={() => handleNavClick(link.id)}
+                      className={`text-sm tracking-widest uppercase transition-colors relative py-1 font-medium ${
+                        isActive
+                          ? 'text-[#1F1D1B] font-semibold'
+                          : 'text-[#6B5E51] hover:text-[#1F1D1B]'
+                      }`}
+                    >
+                      {link.label}
+                      {isActive && (
+                        <span className="absolute bottom-0 left-0 w-full h-[2px] bg-[#C5A059] rounded-full" />
+                      )}
+                    </button>
+                    {link.id === 'shop' && (
+                      <div className="relative">
+                        <button
+                          type="button"
+                          onClick={() => setCategoryMenuOpen(open => !open)}
+                          aria-expanded={categoryMenuOpen}
+                          className={`inline-flex items-center gap-1 text-sm tracking-widest uppercase transition-colors py-1 font-medium ${
+                            selectedCategoryId ? 'text-[#1F1D1B] font-semibold' : 'text-[#6B5E51] hover:text-[#1F1D1B]'
+                          }`}
+                        >
+                          Category <ChevronDown className={`w-3.5 h-3.5 transition-transform ${categoryMenuOpen ? 'rotate-180' : ''}`} />
+                        </button>
+                        {categoryMenuOpen && (
+                          <div className="absolute left-0 top-full mt-3 min-w-52 rounded-xl border border-[#E8DFD8] bg-white p-2 shadow-lg">
+                            {categories.length ? categories.map(category => (
+                              <button
+                                key={category._id}
+                                onClick={() => handleNavClick('shop', { categoryId: category._id })}
+                                className={`block w-full rounded-lg px-3 py-2 text-left text-xs transition-colors ${
+                                  selectedCategoryId === category._id
+                                    ? 'bg-[#F7F1E4] text-[#856525] font-semibold'
+                                    : 'text-[#4A4036] hover:bg-[#FAF8F5]'
+                                }`}
+                              >
+                                {category.name}
+                              </button>
+                            )) : (
+                              <p className="px-3 py-2 text-xs text-[#8C7C6E]">No categories yet</p>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     )}
-                  </button>
+                  </React.Fragment>
                 );
               })}
             </nav>
@@ -157,8 +200,8 @@ export const Navbar: React.FC<NavbarProps> = ({
             {navLinks.map(link => {
               const isActive = currentPage === link.id;
               return (
+                <React.Fragment key={link.id}>
                 <button
-                  key={link.id}
                   onClick={() => handleNavClick(link.id)}
                   className={`block w-full text-left py-2.5 px-3 rounded-lg text-sm tracking-wider uppercase font-semibold transition-colors ${
                     isActive
@@ -168,6 +211,31 @@ export const Navbar: React.FC<NavbarProps> = ({
                 >
                   {link.label}
                 </button>
+                {link.id === 'shop' && (
+                  <div className="pl-3">
+                    <button
+                      type="button"
+                      onClick={() => setMobileCategoriesOpen(open => !open)}
+                      aria-expanded={mobileCategoriesOpen}
+                      className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm font-semibold uppercase tracking-wider text-[#4A4036] hover:bg-[#F0EAE1]"
+                    >
+                      Category
+                      <ChevronDown className={`w-4 h-4 transition-transform ${mobileCategoriesOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                    {mobileCategoriesOpen && categories.map(category => (
+                      <button
+                        key={category._id}
+                        onClick={() => handleNavClick('shop', { categoryId: category._id })}
+                        className={`block w-full rounded-lg px-4 py-2 text-left text-xs ${
+                          selectedCategoryId === category._id ? 'text-[#B38838] font-semibold' : 'text-[#5C5044]'
+                        }`}
+                      >
+                        {category.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                </React.Fragment>
               );
             })}
 

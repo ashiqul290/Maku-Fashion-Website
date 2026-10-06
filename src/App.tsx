@@ -4,7 +4,7 @@ import { AuthProvider, useAuth } from './context/AuthContext.tsx';
 import { UserAuthProvider } from './context/UserAuthContext.tsx';
 import { CartProvider } from './context/CartContext.tsx';
 import { WishlistProvider } from './context/WishlistContext.tsx';
-import { Product, Order } from './types.ts';
+import { Product, Order, Category } from './types.ts';
 
 // Components
 import { Navbar } from './components/Navbar.tsx';
@@ -32,6 +32,8 @@ function MainApp() {
   const [currentPage, setCurrentPage] = useState<string>('home');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [confirmedOrder, setConfirmedOrder] = useState<Order | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
 
   // Products Data State
   const [products, setProducts] = useState<Product[]>([]);
@@ -56,8 +58,20 @@ function MainApp() {
     }
   };
 
+  const fetchCategories = async () => {
+    try {
+      const res = await fetch('/api/categories');
+      if (!res.ok) throw new Error(`Category request failed (${res.status})`);
+      const data = await res.json();
+      setCategories(data.categories || []);
+    } catch (err) {
+      console.error('Failed to load categories from API:', err);
+    }
+  };
+
   useEffect(() => {
     fetchProducts();
+    fetchCategories();
   }, []);
 
   // Hash-based simple routing support
@@ -72,7 +86,10 @@ function MainApp() {
         return;
       }
 
-      if (route.startsWith('product/')) {
+      if (route.startsWith('shop/category/')) {
+        setSelectedCategoryId(route.slice('shop/category/'.length));
+        setCurrentPage('shop');
+      } else if (route.startsWith('product/')) {
         const prodId = route.replace('product/', '');
         const found = products.find(p => p._id === prodId || p.id === prodId);
         if (found) {
@@ -84,6 +101,7 @@ function MainApp() {
       } else if (
         ['shop', 'wishlist', 'about', 'contact', 'checkout', 'account', 'admin', 'admin-login'].includes(route)
       ) {
+        if (route === 'shop') setSelectedCategoryId(null);
         setCurrentPage(route);
       }
     };
@@ -102,7 +120,12 @@ function MainApp() {
       setSelectedProduct(params.product);
       window.location.hash = `product/${params.product._id}`;
     } else if (page === 'home') {
+      setSelectedCategoryId(null);
       window.history.pushState({}, '', '/');
+    } else if (page === 'shop') {
+      const categoryId = params?.categoryId || null;
+      setSelectedCategoryId(categoryId);
+      window.location.hash = categoryId ? `shop/category/${categoryId}` : 'shop';
     } else {
       window.location.hash = page;
     }
@@ -128,6 +151,8 @@ function MainApp() {
       {!isAdminView && (
         <Navbar
           currentPage={currentPage}
+          categories={categories}
+          selectedCategoryId={selectedCategoryId}
           onNavigate={handleNavigate}
           onOpenSearch={() => setIsSearchOpen(true)}
         />
@@ -147,6 +172,9 @@ function MainApp() {
         {currentPage === 'shop' && (
           <ShopPage
             products={products}
+            categories={categories}
+            selectedCategoryId={selectedCategoryId}
+            onClearCategory={() => handleNavigate('shop')}
             isLoading={isLoadingProducts}
             onViewProduct={handleViewProduct}
           />
@@ -191,7 +219,7 @@ function MainApp() {
 
         {currentPage === 'contact' && <ContactPage />}
 
-        {currentPage === 'account' && <AccountPage />}
+        {currentPage === 'account' && <AccountPage onNavigate={handleNavigate} />}
 
         {isAdminRoute && (
           isAuthLoading ? (
@@ -202,6 +230,7 @@ function MainApp() {
             <AdminDashboardPage
               onBackToStore={() => handleNavigate('home')}
               onRefreshProducts={fetchProducts}
+              onRefreshCategories={fetchCategories}
             />
           ) : (
             <AdminLoginPage

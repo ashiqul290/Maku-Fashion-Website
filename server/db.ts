@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
+import { randomUUID } from 'node:crypto';
 
 export interface IProduct {
   _id: string;
@@ -15,10 +16,19 @@ export interface IProduct {
   sizes: string[];
   stock: number;
   material: string;
+  categoryId?: string | null;
   featured: boolean;
   sale: boolean;
   status: 'in_stock' | 'out_of_stock' | 'discontinued';
   popularity: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ICategory {
+  _id: string;
+  name: string;
+  slug: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -102,6 +112,7 @@ const productSchema = new mongoose.Schema({
   sizes: [{ type: String }],
   stock: { type: Number, default: 0 },
   material: { type: String, default: 'Premium Chiffon / Nidha' },
+  categoryId: { type: String },
   featured: { type: Boolean, default: false },
   sale: { type: Boolean, default: false },
   status: { type: String, default: 'in_stock' },
@@ -144,10 +155,19 @@ const orderSchema = new mongoose.Schema({
   updatedAt: { type: Date, default: Date.now }
 });
 
+const categorySchema = new mongoose.Schema({
+  _id: { type: String, required: true },
+  name: { type: String, required: true },
+  slug: { type: String, required: true, unique: true },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
+});
+
 export const MongoAdmin: mongoose.Model<any> = mongoose.models.Admin || mongoose.model('Admin', adminSchema);
 export const MongoUser: mongoose.Model<any> = mongoose.models.User || mongoose.model('User', userSchema);
 export const MongoProduct: mongoose.Model<any> = mongoose.models.Product || mongoose.model('Product', productSchema);
 export const MongoOrder: mongoose.Model<any> = mongoose.models.Order || mongoose.model('Order', orderSchema);
+export const MongoCategory = (mongoose.models.Category || mongoose.model('Category', categorySchema)) as mongoose.Model<any>;
 
 // ----------------- Fallback JSON Store & Unified Store Service -----------------
 const DATA_DIR = path.join(process.cwd(), 'data');
@@ -157,6 +177,7 @@ interface DatabaseStore {
   admins: IAdmin[];
   users: IUser[];
   products: IProduct[];
+  categories: ICategory[];
   orders: IOrder[];
 }
 
@@ -175,6 +196,7 @@ function ensureDataFile(): DatabaseStore {
         admins: Array.isArray(parsed.admins) ? parsed.admins : [],
         users: Array.isArray(parsed.users) ? parsed.users : [],
         products: Array.isArray(parsed.products) ? parsed.products : [],
+        categories: Array.isArray(parsed.categories) ? parsed.categories : [],
         orders: Array.isArray(parsed.orders) ? parsed.orders : []
       };
     } catch {
@@ -186,6 +208,7 @@ function ensureDataFile(): DatabaseStore {
     admins: [],
     users: [],
     products: [],
+    categories: [],
     orders: []
   };
 
@@ -198,155 +221,159 @@ function saveStore(store: DatabaseStore) {
     fs.writeFileSync(DATA_FILE, JSON.stringify(store, null, 2), 'utf-8');
   } catch (err) {
     console.error('Error saving local database store:', err);
+    throw new Error('Could not save the local database store.', { cause: err });
   }
 }
 
-// Initial seed data with authentic modest fashion products for Arabian Saaj
+function categorySlug(name: string) {
+  return name
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLocaleLowerCase()
+    .trim()
+    .replace(/[^\p{L}\p{N}]+/gu, '-')
+    .replace(/^-|-$/g, '');
+}
+
+// Initial seed data for the cookware collection.
 const INITIAL_PRODUCTS: Omit<IProduct, '_id' | 'createdAt' | 'updatedAt'>[] = [
   {
-    name: 'Royal Silk Crepe Abaya with Gold Zari Border',
-    description: 'Masterfully tailored from imported Dubai Silk Crepe, this majestic flowing abaya features intricate hand-finished antique gold zari embroidery along the neckline, cuffs, and front hem. Designed with discreet inner snap buttons for modest coverage and an effortless silhouette.',
-    price: 4950,
-    discountPrice: 4250,
+    name: 'Kiam Natural Tri-Ply Cookware Set',
+    description: 'A versatile stainless-steel cookware collection with tri-ply construction, glass lids, and pieces for everyday cooking.',
+    price: 6850,
     images: [
-      'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=1000&q=80',
-      'https://images.unsplash.com/photo-1585728748178-f0f2f2944208?auto=format&fit=crop&w=1000&q=80',
-      'https://images.unsplash.com/photo-1590736969955-71cc94801759?auto=format&fit=crop&w=1000&q=80'
+      '/uploads/cookware-01-tri-ply-set.jpg',
+      '/uploads/cookware-09-natural-tri-ply.jpg',
+      '/uploads/cookware-26-stainless-tri-ply-catalog.jpg'
     ],
-    colors: ['Onyx Black', 'Midnight Navy', 'Rich Espresso'],
-    sizes: ['52 (Height 5\'0"-5\'2")', '54 (Height 5\'3"-5\'4")', '56 (Height 5\'5"-5\'6")', '58 (Height 5\'7"+)'],
-    stock: 24,
-    material: 'Premium Dubai Silk Crepe & Gold Metallic Thread',
+    colors: ['Stainless Steel'],
+    sizes: ['Cookware Set'],
+    stock: 18,
+    material: 'Tri-ply stainless steel',
     featured: true,
-    sale: true,
+    sale: false,
     status: 'in_stock',
     popularity: 98
   },
   {
-    name: 'Medina Silk Premium Hijab (Desert Rose)',
-    description: 'Crafted from authentic 100% Medina Silk woven in Turkey. Incomparably smooth with a subtle radiant sheen that elevates both everyday and festive modest wear. Non-slip, breathable, and drapes naturally without constant pinning.',
-    price: 950,
-    discountPrice: 790,
+    name: 'Kiam Red Ceramic Cookware Collection',
+    description: 'A striking red ceramic cookware set with matching lids and pans, designed to bring practical everyday pieces together in one collection.',
+    price: 6990,
     images: [
-      'https://images.unsplash.com/photo-1609357605129-26f69add5d6e?auto=format&fit=crop&w=1000&q=80',
-      'https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?auto=format&fit=crop&w=1000&q=80'
+      '/uploads/cookware-02-red-ceramic-set.jpg',
+      '/uploads/cookware-03-red-family-pack.jpg',
+      '/uploads/cookware-04-red-ceramic-cookware.jpg',
+      '/uploads/cookware-05-red-ceramic-set.jpg',
+      '/uploads/cookware-06-red-ceramic-catalog.jpg',
+      '/uploads/cookware-07-red-pan-set.jpg'
     ],
-    colors: ['Desert Rose', 'Pearl Cream', 'Sage Olive', 'Dusty Mauve', 'Mocha Brown'],
-    sizes: ['Standard (180cm x 75cm)'],
-    stock: 65,
-    material: '100% Turkish Medina Silk',
+    colors: ['Red'],
+    sizes: ['Cookware Set'],
+    stock: 16,
+    material: 'Ceramic-coated cookware',
     featured: true,
-    sale: true,
+    sale: false,
     status: 'in_stock',
-    popularity: 95
+    popularity: 96
   },
   {
-    name: 'Emirati Royal Butterfly Borka (Nidha Fabric)',
-    description: 'An iconic Middle Eastern silhouette with lavish butterfly batwing drape. Made from genuine Korean Nidha fabric celebrated for its cool touch, zero-transparency, and wrinkle-resistant qualities. Includes matching stretch jersey cuff detailing for easy ablution.',
-    price: 4600,
-    discountPrice: 3950,
+    name: 'Kiam Dia Cast Non-Stick Cookware Set',
+    description: 'A non-stick cookware collection with frypans and lidded pots in practical sizes for home cooking.',
+    price: 5490,
     images: [
-      'https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?auto=format&fit=crop&w=1000&q=80',
-      'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=1000&q=80'
+      '/uploads/cookware-08-dia-cast-nonstick.jpg',
+      '/uploads/cookware-10-black-nonstick-catalog.jpg',
+      '/uploads/cookware-11-black-nonstick-sets.jpg',
+      '/uploads/cookware-12-classic-nonstick.jpg',
+      '/uploads/cookware-13-copper-ceramic-catalog.jpg',
+      '/uploads/cookware-14-nonstick-set-catalog.jpg',
+      '/uploads/cookware-15-black-nonstick-pans.jpg'
     ],
-    colors: ['Deep Jet Black', 'Forest Cedar', 'Burgundy Plum'],
-    sizes: ['52', '54', '56', '58'],
-    stock: 18,
-    material: 'Grade-A Korean Nidha Fabric',
+    colors: ['Black', 'Copper'],
+    sizes: ['Cookware Set'],
+    stock: 20,
+    material: 'Non-stick coated cookware',
+    featured: true,
+    sale: false,
+    status: 'in_stock',
+    popularity: 94
+  },
+  {
+    name: 'Kiam Stainless Steel Belly Casserole',
+    description: 'A stainless-steel belly casserole with a fitted lid and side handles, suitable for serving and everyday cooking.',
+    price: 2450,
+    images: [
+      '/uploads/cookware-29-stainless-belly-pot.jpg'
+    ],
+    colors: ['Stainless Steel'],
+    sizes: ['Standard'],
+    stock: 24,
+    material: 'Stainless steel',
+    featured: true,
+    sale: false,
+    status: 'in_stock',
+    popularity: 86
+  },
+  {
+    name: 'Kiam Stainless Steel Pressure Cooker',
+    description: 'A durable pressure cooker collection for faster everyday meal preparation. Select the capacity that suits your kitchen.',
+    price: 3550,
+    images: [
+      '/uploads/cookware-16-pressure-cooker.jpg',
+      '/uploads/cookware-17-pressure-cooker-range.jpg',
+      '/uploads/cookware-18-pressure-cooker-premium.jpg',
+      '/uploads/cookware-19-pressure-cooker-catalog.jpg',
+      '/uploads/cookware-28-pressure-cooker-listing.jpg',
+      '/uploads/cookware-32-pressure-cooker-product.jpg',
+      '/uploads/cookware-33-pressure-cooker-set.jpg'
+    ],
+    colors: ['Stainless Steel'],
+    sizes: ['3.5 L', '5.5 L'],
+    stock: 20,
+    material: 'Stainless steel',
     featured: true,
     sale: false,
     status: 'in_stock',
     popularity: 92
   },
   {
-    name: 'Breathable Triple-Layered Chiffon Niqab',
-    description: 'Designed for ultimate modesty and effortless breathability. Made with ultra-soft Korean Georgette Chiffon that allows effortless airflow while ensuring zero see-through opacity. Features an adjustable back tie ribbon and seamless eye-opening that sits gently on the face without pinching.',
-    price: 650,
-    discountPrice: 490,
+    name: 'Kiam Rice Cooker',
+    description: 'An everyday electric rice cooker with a covered cooking pot, available in multiple capacities.',
+    price: 3250,
     images: [
-      'https://images.unsplash.com/photo-1594744803329-e58b31de8bf5?auto=format&fit=crop&w=1000&q=80',
-      'https://images.unsplash.com/photo-1585728748178-f0f2f2944208?auto=format&fit=crop&w=1000&q=80'
+      '/uploads/cookware-20-rice-cookers.jpg',
+      '/uploads/cookware-21-rice-cookers-range.jpg'
     ],
-    colors: ['Classic Noir', 'Charcoal Smoke', 'Warm Chocolate'],
-    sizes: ['Standard 3-Layer (Front 14" / Back 32")'],
-    stock: 50,
-    material: 'Korean Georgette Chiffon',
+    colors: ['Red', 'Green', 'Silver'],
+    sizes: ['2.8 L'],
+    stock: 14,
+    material: 'Metal body with inner cooking pot',
     featured: true,
-    sale: true,
-    status: 'in_stock',
-    popularity: 88
-  },
-  {
-    name: 'Turkish Crinkle Chiffon Scarf - Pearl Dust',
-    description: 'Light as air with subtle micro-pleats that add textural depth and eliminate the need for ironing. Drapes with structured elegance and stays secure all day long. Ideal for both hijab styling and drape scarves over modest ensembles.',
-    price: 850,
-    discountPrice: 650,
-    images: [
-      'https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?auto=format&fit=crop&w=1000&q=80',
-      'https://images.unsplash.com/photo-1609357605129-26f69add5d6e?auto=format&fit=crop&w=1000&q=80'
-    ],
-    colors: ['Pearl Dust', 'Caramel Latte', 'Soft Blush', 'Forest Sage'],
-    sizes: ['Generous Wrap (190cm x 85cm)'],
-    stock: 42,
-    material: 'Turkish Micro-Pleated Chiffon',
-    featured: false,
-    sale: true,
+    sale: false,
     status: 'in_stock',
     popularity: 84
   },
   {
-    name: 'Minimalist Linen Everyday Modest Co-ord Set',
-    description: 'A contemporary 2-piece modest outfit consisting of a relaxed calf-length tunic and wide-leg modest trousers. Cut from breathable pre-washed organic linen-cotton blend. Thoughtfully tailored with side pockets, modest side slits, and a clean mandarin collar.',
-    price: 3800,
-    discountPrice: 3400,
+    name: 'Kiam 3-in-1 Mixer Grinder',
+    description: 'A multi-purpose mixer grinder supplied with multiple jars for blending, grinding, and everyday kitchen preparation.',
+    price: 4250,
     images: [
-      'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=1000&q=80',
-      'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1000&q=80'
+      '/uploads/cookware-22-mixer-grinder.jpg',
+      '/uploads/cookware-23-mixer-grinder-range.jpg',
+      '/uploads/cookware-24-turbo-mixer.jpg',
+      '/uploads/cookware-25-mixer-grinder-premium.jpg',
+      '/uploads/cookware-27-mixer-base.jpg',
+      '/uploads/cookware-30-blender.jpg',
+      '/uploads/cookware-31-blender-premium.jpg'
     ],
-    colors: ['Oatmeal Beige', 'Terracotta Taupe', 'Olive Drab', 'Charcoal'],
-    sizes: ['S (Bust 38")', 'M (Bust 42")', 'L (Bust 46")', 'XL (Bust 50")'],
-    stock: 20,
-    material: '100% Breathable Washed Linen-Cotton',
+    colors: ['White', 'Black', 'Red'],
+    sizes: ['3 Jar'],
+    stock: 15,
+    material: 'Appliance-grade motor with stainless-steel jars',
     featured: true,
     sale: false,
     status: 'in_stock',
     popularity: 90
-  },
-  {
-    name: 'Sultanah Velvet Embellished Kaftan Abaya',
-    description: 'An opulent celebratory abaya crafted from heavy micro-velvet with shimmering pearl and crystal sequin arabesque hand-work across the kimono sleeves and lapel. Comes with a matching embellished belt for optional cinching and an inner modesty slip.',
-    price: 6800,
-    discountPrice: 5900,
-    images: [
-      'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=1000&q=80',
-      'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=1000&q=80'
-    ],
-    colors: ['Royal Emerald', 'Deep Sapphire', 'Antique Gold Black'],
-    sizes: ['52', '54', '56', '58'],
-    stock: 12,
-    material: 'Micro-Velvet with Crystal & Zari Beadwork',
-    featured: true,
-    sale: true,
-    status: 'in_stock',
-    popularity: 96
-  },
-  {
-    name: 'Cashmere-Touch Winter Pashmina Scarf',
-    description: 'Wrap yourself in heavenly warmth and sophisticated luxury. Woven from ultra-fine blended cashmere fibers with a delicate eyelash fringe. Substantial yet drapeable, it shields from winter chills while preserving graceful modesty.',
-    price: 1350,
-    discountPrice: 1100,
-    images: [
-      'https://images.unsplash.com/photo-1520903920243-00d872a2d1c9?auto=format&fit=crop&w=1000&q=80',
-      'https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?auto=format&fit=crop&w=1000&q=80'
-    ],
-    colors: ['Camel Beige', 'Cashmere Cream', 'Espresso Heather', 'Misty Grey'],
-    sizes: ['XL Pashmina (200cm x 75cm)'],
-    stock: 35,
-    material: 'Fine Grade Cashmere & Wool Blend',
-    featured: false,
-    sale: false,
-    status: 'in_stock',
-    popularity: 82
   }
 ];
 
@@ -381,6 +408,14 @@ export async function initDatabase() {
 async function migrateLocalDataToMongo() {
   const store = ensureDataFile();
   let migrated = 0;
+
+  for (const category of store.categories || []) {
+    const exists = await (MongoCategory as any).findById(category._id);
+    if (!exists) {
+      await (MongoCategory as any).create(category);
+      migrated += 1;
+    }
+  }
 
   for (const admin of store.admins) {
     const exists = await (MongoAdmin as any).findOne({ email: admin.email.toLowerCase() });
@@ -459,6 +494,7 @@ async function seedLocalStore() {
 
   if (process.env.RESET_CATALOG_AND_ORDERS === 'true') {
     store.products = [];
+    store.categories = [];
     store.orders = [];
   }
 
@@ -470,6 +506,20 @@ async function seedLocalStore() {
       createdAt: now,
       updatedAt: now
     }));
+    store.categories = [
+      { _id: 'category_cookware', name: 'Cookware Sets', slug: 'cookware-sets', createdAt: now, updatedAt: now },
+      { _id: 'category_pots', name: 'Pots & Casseroles', slug: 'pots-casseroles', createdAt: now, updatedAt: now },
+      { _id: 'category_pressure', name: 'Pressure Cookers', slug: 'pressure-cookers', createdAt: now, updatedAt: now },
+      { _id: 'category_rice', name: 'Rice Cookers', slug: 'rice-cookers', createdAt: now, updatedAt: now },
+      { _id: 'category_blenders', name: 'Blenders & Mixers', slug: 'blenders-mixers', createdAt: now, updatedAt: now }
+    ];
+    store.products[0].categoryId = 'category_cookware';
+    store.products[1].categoryId = 'category_cookware';
+    store.products[2].categoryId = 'category_cookware';
+    store.products[3].categoryId = 'category_pots';
+    store.products[4].categoryId = 'category_pressure';
+    store.products[5].categoryId = 'category_rice';
+    store.products[6].categoryId = 'category_blenders';
   }
 
   // Admin seed
@@ -516,9 +566,10 @@ async function seedMongoDb() {
 
 async function clearMongoCatalogAndOrders() {
   const products = await (MongoProduct as any).deleteMany({});
+  const categories = await (MongoCategory as any).deleteMany({});
   const orders = await (MongoOrder as any).deleteMany({});
   const users = await (MongoUser as any).deleteMany({});
-  console.log(`🧹 Reset MongoDB catalog, orders, and users: ${products.deletedCount || 0} product(s), ${orders.deletedCount || 0} order(s), ${users.deletedCount || 0} user(s) removed.`);
+  console.log(`🧹 Reset MongoDB catalog, categories, orders, and users: ${products.deletedCount || 0} product(s), ${categories.deletedCount || 0} categor(y/ies), ${orders.deletedCount || 0} order(s), ${users.deletedCount || 0} user(s) removed.`);
 }
 
 async function cleanupDemoMongoData() {
@@ -546,6 +597,80 @@ async function cleanupDemoMongoData() {
 
 // ----------------- Data Access Service (Handles Mongo or Store transparently) -----------------
 export const Database = {
+  // CATEGORIES
+  async getCategories() {
+    if (isMongoConnected) {
+      const categories = await (MongoCategory as any).find({}).sort({ name: 1 }).exec();
+      return categories.map((category: any) => ({ ...category.toObject(), _id: category._id.toString() }));
+    }
+    return ensureDataFile().categories.sort((a, b) => a.name.localeCompare(b.name));
+  },
+
+  async createCategory(name: string) {
+    const normalizedName = name.trim();
+    const slug = categorySlug(normalizedName);
+    const duplicate = (await this.getCategories()).some(
+      category => category.name.toLocaleLowerCase() === normalizedName.toLocaleLowerCase()
+    );
+    if (duplicate) throw new Error('A category with this name already exists.');
+
+    const now = new Date().toISOString();
+    const category: ICategory = {
+      _id: `category_${randomUUID()}`,
+      name: normalizedName,
+      slug,
+      createdAt: now,
+      updatedAt: now
+    };
+
+    if (isMongoConnected) {
+      const created = await (MongoCategory as any).create(category);
+      return { ...created.toObject(), _id: created._id.toString() };
+    }
+    const store = ensureDataFile();
+    store.categories.push(category);
+    saveStore(store);
+    return category;
+  },
+
+  async updateCategory(id: string, name: string) {
+    const normalizedName = name.trim();
+    const duplicate = (await this.getCategories()).some(
+      category => category._id !== id && category.name.toLocaleLowerCase() === normalizedName.toLocaleLowerCase()
+    );
+    if (duplicate) throw new Error('A category with this name already exists.');
+
+    const update = { name: normalizedName, slug: categorySlug(normalizedName), updatedAt: new Date().toISOString() };
+    if (isMongoConnected) {
+      const category = await (MongoCategory as any).findByIdAndUpdate(id, update, { new: true });
+      return category ? { ...category.toObject(), _id: category._id.toString() } : null;
+    }
+    const store = ensureDataFile();
+    const category = store.categories.find(item => item._id === id);
+    if (!category) return null;
+    Object.assign(category, update);
+    saveStore(store);
+    return category;
+  },
+
+  async deleteCategory(id: string) {
+    if (isMongoConnected) {
+      const category = await (MongoCategory as any).findByIdAndDelete(id);
+      if (!category) return false;
+      await (MongoProduct as any).updateMany({ categoryId: id }, { $unset: { categoryId: 1 } });
+      return true;
+    }
+    const store = ensureDataFile();
+    const initialLength = store.categories.length;
+    store.categories = store.categories.filter(category => category._id !== id);
+    if (store.categories.length === initialLength) return false;
+    store.products.forEach(product => {
+      if (product.categoryId === id) delete product.categoryId;
+    });
+    saveStore(store);
+    return true;
+  },
+
   // PRODUCTS
   async getProducts(filter: { search?: string; sort?: string; featured?: boolean; sale?: boolean } = {}) {
     if (isMongoConnected) {
@@ -635,6 +760,7 @@ export const Database = {
       sizes: Array.isArray(productData.sizes) && productData.sizes.length > 0 ? productData.sizes : ['Standard'],
       stock: productData.stock !== undefined ? Number(productData.stock) : 10,
       material: productData.material || 'Premium Silk & Chiffon',
+      categoryId: productData.categoryId,
       featured: Boolean(productData.featured),
       sale: Boolean(productData.sale),
       status: (productData.status as any) || 'in_stock',

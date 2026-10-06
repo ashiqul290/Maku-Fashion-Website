@@ -54,7 +54,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
             type="text"
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
-            placeholder="Search modest fashion by title, fabric, silk..."
+            placeholder="Search cookware, pressure cookers, blenders..."
             className="w-full bg-transparent text-[#1F1D1B] placeholder-[#9E8E81] text-base focus:outline-none"
           />
           <button
@@ -73,9 +73,9 @@ export const SearchModal: React.FC<SearchModalProps> = ({
               <p className="font-serif text-sm text-[#1F1D1B] mb-1">
                 Looking for something specific?
               </p>
-              <p>Type above to find hijabs, abayas, borkas, niqabs, or scarves.</p>
+              <p>Search cookware sets, pressure cookers, rice cookers, or mixer grinders.</p>
               <div className="flex flex-wrap items-center justify-center gap-2 mt-4">
-                {['Medina Silk', 'Crepe Abaya', 'Chiffon Niqab', 'Nidha', 'Pashmina'].map(term => (
+                {['Tri-Ply', 'Non-Stick', 'Pressure Cooker', 'Rice Cooker', 'Mixer Grinder'].map(term => (
                   <button
                     key={term}
                     onClick={() => setSearchTerm(term)}
@@ -89,7 +89,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
           ) : filteredProducts.length === 0 ? (
             <div className="py-8 text-center text-xs text-[#8C7C6E]">
               <p className="font-serif text-sm text-[#1F1D1B] mb-1">No products found</p>
-              <p>Try searching for general terms like "silk", "abaya", or "chiffon".</p>
+              <p>Try searching for "cookware", "pressure cooker", or "mixer grinder".</p>
             </div>
           ) : (
             <div className="space-y-2.5">

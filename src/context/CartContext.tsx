@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Product, CartItem } from '../types.ts';
-import { useToast } from './ToastContext.tsx';
 
 interface CartContextValue {
   items: CartItem[];
@@ -25,7 +24,6 @@ const CART_STORAGE_KEY = 'arabian_saaj_cart_v1';
 const MAX_CART_QUANTITY = 5;
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { showToast } = useToast();
   const [items, setItems] = useState<CartItem[]>(() => {
     try {
       const saved = localStorage.getItem(CART_STORAGE_KEY);
@@ -86,7 +84,6 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     if (openDrawer) {
-      showToast('Product added to cart', `${product.name} (${chosenColor}, ${chosenSize})`, 'success');
       setIsCartOpen(true);
     } else {
       setIsCartOpen(false);

@@ -1,16 +1,22 @@
 import React, { useState, useMemo } from 'react';
 import { Search, ArrowUpDown, SlidersHorizontal, X } from 'lucide-react';
-import { Product } from '../types.ts';
+import { Category, Product } from '../types.ts';
 import { ProductCard } from '../components/ProductCard.tsx';
 
 interface ShopPageProps {
   products: Product[];
+  categories: Category[];
+  selectedCategoryId: string | null;
+  onClearCategory: () => void;
   isLoading: boolean;
   onViewProduct: (product: Product) => void;
 }
 
 export const ShopPage: React.FC<ShopPageProps> = ({
   products,
+  categories,
+  selectedCategoryId,
+  onClearCategory,
   isLoading,
   onViewProduct
 }) => {
@@ -19,9 +25,14 @@ export const ShopPage: React.FC<ShopPageProps> = ({
   const [onlySale, setOnlySale] = useState(false);
   const [onlyInStock, setOnlyInStock] = useState(false);
 
-  // Filter and Sort without categories
+  const selectedCategory = categories.find(category => category._id === selectedCategoryId);
+
   const filteredProducts = useMemo(() => {
     let list = [...products];
+
+    if (selectedCategoryId) {
+      list = list.filter(product => product.categoryId === selectedCategoryId);
+    }
 
     if (searchTerm.trim()) {
       const q = searchTerm.toLowerCase().trim();
@@ -55,21 +66,25 @@ export const ShopPage: React.FC<ShopPageProps> = ({
     }
 
     return list;
-  }, [products, searchTerm, sortBy, onlySale, onlyInStock]);
+  }, [products, searchTerm, sortBy, onlySale, onlyInStock, selectedCategoryId]);
 
-  const hasActiveFilters = searchTerm !== '' || onlySale || onlyInStock || sortBy !== 'newest';
+  const hasActiveFilters = searchTerm !== '' || onlySale || onlyInStock || sortBy !== 'newest' || !!selectedCategoryId;
 
   const resetFilters = () => {
     setSearchTerm('');
     setSortBy('newest');
     setOnlySale(false);
     setOnlyInStock(false);
+    onClearCategory();
   };
 
   return (
     <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-10 space-y-6 sm:space-y-8 pb-20 sm:pb-12">
       {/* Filter and Control Bar */}
       <div className="bg-white p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-[#E8DFD8] shadow-xs space-y-3 sm:space-y-4">
+        {selectedCategory && (
+          <h1 className="text-xl font-bold text-[#1F1D1B]">{selectedCategory.name}</h1>
+        )}
         <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
           {/* Search Field */}
           <div className="relative flex-1 max-w-md">
@@ -78,7 +93,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
               type="text"
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              placeholder="Search products by title, fabric, silk..."
+              placeholder="Search cookware, pressure cookers, blenders..."
               className="w-full pl-10 pr-9 py-2 bg-[#FAF8F5] border border-[#E8DFD8] rounded-xl text-xs sm:text-sm text-[#1F1D1B] placeholder-[#9E8E81] focus:outline-none focus:border-[#B38838]"
             />
             {searchTerm && (
@@ -147,7 +162,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
         {/* Counter and status line */}
         <div className="flex items-center justify-between text-xs text-[#786A5E] pt-1 border-t border-[#F5EFEB]">
           <span>
-            Showing <strong className="text-[#1F1D1B]">{filteredProducts.length}</strong> modest products
+            Showing <strong className="text-[#1F1D1B]">{filteredProducts.length}</strong> products
           </span>
           <span className="text-[11px] text-[#A8988A] hidden sm:inline">
             All categories combined in a single seamless catalog

@@ -17,31 +17,50 @@ import {
   UploadCloud,
   X,
   RefreshCw,
-  AlertCircle
+  AlertCircle,
+  Tags
 } from 'lucide-react';
-import { Product, Order, AdminStats } from '../types.ts';
+import { Product, Order, AdminStats, Category } from '../types.ts';
 import { useAuth } from '../context/AuthContext.tsx';
 import { useToast } from '../context/ToastContext.tsx';
 import { ConfirmationModal } from '../components/ConfirmationModal.tsx';
 import { BrandLogo } from '../components/BrandLogo.tsx';
 
+async function readApiResponse<T>(response: Response): Promise<T> {
+  const body = await response.text();
+  try {
+    return JSON.parse(body) as T;
+  } catch {
+    const detail = body.trim().slice(0, 160);
+    throw new Error(
+      `Server returned an invalid response (${response.status}).${detail ? ` ${detail}` : ' The response body was empty.'}`
+    );
+  }
+}
+
 interface AdminDashboardPageProps {
   onBackToStore: () => void;
   onRefreshProducts: () => void;
+  onRefreshCategories: () => void;
 }
 
 export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   onBackToStore,
-  onRefreshProducts
+  onRefreshProducts,
+  onRefreshCategories
 }) => {
   const { adminUser, adminToken, logout } = useAuth();
   const { showToast } = useToast();
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'orders'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'categories' | 'orders'>('overview');
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [categoryName, setCategoryName] = useState('');
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
+  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
 
   // Search & Filters
   const [productSearch, setProductSearch] = useState('');
@@ -64,7 +83,8 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
     sizes: '',
     images: [] as string[],
     sale: false,
-    featured: false
+    featured: false,
+    categoryId: ''
   });
   const [imageUploadLoading, setImageUploadLoading] = useState(false);
 
@@ -99,6 +119,11 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
         const orderData = await ordersRes.json();
         setOrders(orderData.orders || []);
       }
+
+      const categoriesRes = await fetch('/api/categories');
+      if (!categoriesRes.ok) throw new Error(`Category request failed (${categoriesRes.status})`);
+      const categoriesData = await categoriesRes.json();
+      setCategories(categoriesData.categories || []);
     } catch (err) {
       console.error('Failed to load admin dashboard data:', err);
       showToast('Error loading data', 'Please check server connection', 'error');
@@ -110,6 +135,64 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   useEffect(() => {
     fetchAdminData();
   }, [adminToken]);
+
+  const handleSaveCategory = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!adminToken) return;
+
+    try {
+      const response = await fetch(
+        editingCategoryId ? `/api/categories/${editingCategoryId}` : '/api/categories',
+        {
+          method: editingCategoryId ? 'PUT' : 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: 'Bearer ' + adminToken
+          },
+          body: JSON.stringify({ name: categoryName.trim() })
+        }
+      );
+      const data = await readApiResponse<{ success: boolean; category: Category; error?: string }>(response);
+      if (!response.ok || !data.success) throw new Error(data.error || 'Failed to save category.');
+
+      setCategories(previous => editingCategoryId
+        ? previous.map(category => category._id === data.category._id ? data.category : category)
+        : [...previous, data.category].sort((a, b) => a.name.localeCompare(b.name))
+      );
+      showToast(editingCategoryId ? 'Category updated' : 'Category created', data.category.name, 'success');
+      setCategoryName('');
+      setEditingCategoryId(null);
+      onRefreshCategories();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to save category.';
+      console.error('Error saving category:', err);
+      showToast('Error saving category', message, 'error');
+    }
+  };
+
+  const handleDeleteCategory = async () => {
+    if (!adminToken || !categoryToDelete) return;
+
+    try {
+      const response = await fetch(`/api/categories/${categoryToDelete._id}`, {
+        method: 'DELETE',
+        headers: { Authorization: 'Bearer ' + adminToken }
+      });
+      const data = await readApiResponse<{ success: boolean; error?: string }>(response);
+      if (!response.ok || !data.success) throw new Error(data.error || 'Failed to delete category.');
+
+      setCategories(previous => previous.filter(category => category._id !== categoryToDelete._id));
+      showToast('Category deleted', `${categoryToDelete.name}; its products are now uncategorized.`, 'info');
+      setCategoryToDelete(null);
+      onRefreshCategories();
+      onRefreshProducts();
+      fetchAdminData();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to delete category.';
+      console.error('Error deleting category:', err);
+      showToast('Error deleting category', message, 'error');
+    }
+  };
 
   // Open Product Modal for Add or Edit
   const openAddProductModal = () => {
@@ -125,6 +208,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
       stock: '15',
       colors: 'Black, Dusty Rose, Mocha Brown, Olive Gold',
       sizes: '52, 54, 56, 58',
+      categoryId: categories[0]?._id || '',
       images: ['https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=800&q=80'],
       sale: false,
       featured: false
@@ -148,6 +232,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
       stock: product.stock.toString(),
       colors: product.colors?.join(', ') || '',
       sizes: product.sizes?.join(', ') || '',
+      categoryId: product.categoryId || '',
       images: product.images || [],
       sale: !!product.sale,
       featured: !!product.featured
@@ -245,6 +330,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
       discountPrice: productFormData.discountPrice ? parseFloat(productFormData.discountPrice) : undefined,
       material: productFormData.material.trim(),
       stock: parseInt(productFormData.stock, 10) || 0,
+      categoryId: productFormData.categoryId || null,
       colors: productFormData.colors
         .split(',')
         .map(c => c.trim())
@@ -457,6 +543,18 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
             </button>
 
             <button
+              onClick={() => setActiveTab('categories')}
+              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium transition-colors ${
+                activeTab === 'categories'
+                  ? 'bg-[#B38838] text-white font-semibold shadow-sm'
+                  : 'text-[#C7B7A7] hover:bg-[#2C2723] hover:text-[#FAF8F5]'
+              }`}
+            >
+              <Tags className="w-4 h-4" />
+              <span>Categories ({categories.length})</span>
+            </button>
+
+            <button
               onClick={() => setActiveTab('orders')}
               className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium transition-colors ${
                 activeTab === 'orders'
@@ -497,6 +595,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
             <h1 className="text-2xl font-bold text-[#1F1D1B]">
               {activeTab === 'overview' && 'Executive Overview'}
               {activeTab === 'products' && 'Product Inventory'}
+              {activeTab === 'categories' && 'Category Management'}
               {activeTab === 'orders' && 'Order Processing Center'}
             </h1>
             <p className="text-xs text-[#786A5E] mt-0.5">
@@ -524,6 +623,88 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
             )}
           </div>
         </div>
+
+        {activeTab === 'categories' && (
+          <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <form onSubmit={handleSaveCategory} className="lg:col-span-1 bg-white rounded-2xl border border-[#E8DFD8] shadow-xs p-6 space-y-4 self-start">
+              <div>
+                <h2 className="font-serif text-lg font-bold text-[#1F1D1B]">
+                  {editingCategoryId ? 'Edit Category' : 'Create Category'}
+                </h2>
+                <p className="text-xs text-[#786A5E] mt-1">
+                  Categories appear automatically in the store navigation dropdown.
+                </p>
+              </div>
+              <label className="block text-xs font-medium text-[#1F1D1B]">
+                Category name
+                <input
+                  required
+                  maxLength={60}
+                  value={categoryName}
+                  onChange={event => setCategoryName(event.target.value)}
+                  placeholder="e.g. Cookware Sets"
+                  className="mt-1.5 w-full px-3.5 py-2.5 bg-[#FAF8F5] border border-[#E8DFD8] rounded-xl focus:outline-none focus:border-[#B38838]"
+                />
+              </label>
+              <div className="flex gap-2">
+                <button type="submit" className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#1F1D1B] text-white text-xs font-semibold rounded-xl hover:bg-[#3D352D]">
+                  <Plus className="w-4 h-4" />
+                  {editingCategoryId ? 'Save Changes' : 'Create Category'}
+                </button>
+                {editingCategoryId && (
+                  <button
+                    type="button"
+                    onClick={() => { setEditingCategoryId(null); setCategoryName(''); }}
+                    className="px-4 py-2.5 border border-[#E8DFD8] rounded-xl text-xs text-[#5C5044]"
+                  >
+                    Cancel
+                  </button>
+                )}
+              </div>
+            </form>
+
+            <div className="lg:col-span-2 bg-white rounded-2xl border border-[#E8DFD8] shadow-xs p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="font-serif text-lg font-bold text-[#1F1D1B]">Store Categories</h2>
+                <span className="text-xs text-[#786A5E]">{categories.length} total</span>
+              </div>
+              {categories.length === 0 ? (
+                <p className="py-10 text-center text-xs text-[#786A5E]">No categories yet. Create one to add it to the navigation dropdown.</p>
+              ) : (
+                <div className="divide-y divide-[#F0EAE1]">
+                  {categories.map(category => (
+                    <div key={category._id} className="flex items-center justify-between gap-3 py-3">
+                      <div>
+                        <p className="text-sm font-semibold text-[#1F1D1B]">{category.name}</p>
+                        <p className="text-[11px] text-[#8C7C6E]">
+                          {products.filter(product => product.categoryId === category._id).length} products
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => { setEditingCategoryId(category._id); setCategoryName(category.name); }}
+                          aria-label={`Edit ${category.name}`}
+                          className="p-2 text-[#8C7C6E] hover:text-[#B38838] hover:bg-[#F7F1E4] rounded-lg"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setCategoryToDelete(category)}
+                          aria-label={`Delete ${category.name}`}
+                          className="p-2 text-[#8C7C6E] hover:text-rose-600 hover:bg-rose-50 rounded-lg"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+        )}
 
         {/* TAB 1: OVERVIEW */}
         {activeTab === 'overview' && (
@@ -669,7 +850,8 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                 <thead>
                   <tr className="border-b border-[#E8DFD8] text-[#786A5E] uppercase tracking-wider font-semibold">
                     <th className="py-3">Product</th>
-                    <th className="py-3">Fabric</th>
+                    <th className="py-3">Category</th>
+                    <th className="py-3">Material</th>
                     <th className="py-3">Price</th>
                     <th className="py-3">Stock</th>
                     <th className="py-3">Tags</th>
@@ -701,7 +883,11 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                         </td>
 
                         <td className="py-3 text-[#5C5044]">
-                          {product.material || 'Standard Fabric'}
+                          {categories.find(category => category._id === product.categoryId)?.name || 'Uncategorized'}
+                        </td>
+
+                        <td className="py-3 text-[#5C5044]">
+                          {product.material || 'Not specified'}
                         </td>
 
                         <td className="py-3">
@@ -898,6 +1084,25 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                   placeholder="e.g. Royal Dubai Silk Abaya"
                   className="w-full px-3.5 py-2.5 bg-[#FAF8F5] border border-[#E8DFD8] rounded-xl text-[#1F1D1B] focus:outline-none focus:border-[#B38838]"
                 />
+              </div>
+
+              <div>
+                <label className="block font-medium text-[#1F1D1B] mb-1 uppercase tracking-wider text-[11px]">
+                  Category
+                </label>
+                <select
+                  value={productFormData.categoryId}
+                  onChange={event => setProductFormData({ ...productFormData, categoryId: event.target.value })}
+                  className="w-full px-3.5 py-2.5 bg-[#FAF8F5] border border-[#E8DFD8] rounded-xl text-[#1F1D1B] focus:outline-none focus:border-[#B38838]"
+                >
+                  <option value="">Uncategorized</option>
+                  {categories.map(category => (
+                    <option key={category._id} value={category._id}>{category.name}</option>
+                  ))}
+                </select>
+                {categories.length === 0 && (
+                  <p className="text-[11px] text-[#8C7C6E] mt-1">Create a category in the Categories tab first.</p>
+                )}
               </div>
 
               {/* Price and Discount */}
@@ -1307,6 +1512,16 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
         isDestructive={true}
         onConfirm={handleConfirmDelete}
         onCancel={() => setProductToDelete(null)}
+      />
+      <ConfirmationModal
+        isOpen={!!categoryToDelete}
+        title="Delete Category?"
+        message={`Are you sure you want to delete "${categoryToDelete?.name}"? Products in this category will remain in the store but become uncategorized.`}
+        confirmLabel="Yes, Delete"
+        cancelLabel="Keep Category"
+        isDestructive={true}
+        onConfirm={handleDeleteCategory}
+        onCancel={() => setCategoryToDelete(null)}
       />
     </div>
   );

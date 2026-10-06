@@ -36,20 +36,17 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
       onClick={onClick}
       className={`flex items-center gap-2.5 sm:gap-3 select-none cursor-pointer group ${className}`}
     >
-      {/* Official Facebook Page Brand Logo */}
       <div
         className="relative flex-shrink-0 rounded-full overflow-hidden transition-transform duration-300 group-hover:scale-105 border border-[#C5A059]/50 shadow-sm bg-[#FAF8F5]"
         style={{
           width: dim.icon,
           height: dim.icon,
         }}
+        aria-hidden="true"
       >
-        <img
-          src="/logo.png"
-          alt="Arabian Saaj Logo"
-          referrerPolicy="no-referrer"
-          className="w-full h-full object-cover object-center"
-        />
+        <span className="flex h-full w-full items-center justify-center font-serif text-2xl font-bold text-[#B38838]">
+          M
+        </span>
       </div>
 
       {/* Brand Typography */}
@@ -60,7 +57,7 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
           } truncate`}
           style={{ fontFamily: "'Poppins', sans-serif" }}
         >
-          Arabian <span className="text-[#B38838]">Saaj</span>
+          Maku <span className="text-[#B38838]">Collection</span>
         </span>
 
         {showSubtitle && (
@@ -69,11 +66,10 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
               inverted ? 'text-amber-200/70' : 'text-[#8A7B6E]'
             }`}
           >
-            Hijab • Abaya • Niqab • Scarf
+            Cookware • Kitchenware • Appliances
           </span>
         )}
       </div>
     </div>
   );
 };
-

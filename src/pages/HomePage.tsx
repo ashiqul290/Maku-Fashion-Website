@@ -29,15 +29,15 @@ export const HomePage: React.FC<HomePageProps> = ({
             <div className="lg:col-span-6 space-y-4 sm:space-y-6 text-left">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#F1E7DA] text-[#856525] border border-[#E4D1B8] text-[10px] sm:text-xs font-semibold tracking-wider uppercase">
                 <Sparkles className="w-3 h-3 text-[#B38838]" />
-                <span>Luxury Modest Wear Collection</span>
+                <span>Premium Cookware Collection</span>
               </div>
 
               <h1 className="text-3xl sm:text-5xl lg:text-6xl text-[#1F1D1B] font-bold tracking-tight leading-[1.2]">
-                Elegance in Every <span className="italic text-[#B38838] font-medium">Veil</span>
+                Elevate Your Everyday Cooking
               </h1>
 
               <p className="text-sm sm:text-base text-[#615346] leading-relaxed max-w-xl font-light">
-                Discover beautiful hijabs, borkas, niqabs and modest fashion designed with elegance and comfort in mind. Hand-selected Medina silks, breathable Korean nidhas, and bespoke cuts tailored for the woman of grace.
+                Discover premium cookware designed for modern kitchens. Durable materials, elegant designs, and reliable performance make every cooking experience easier and more enjoyable.
               </p>
 
               {/* Action Buttons */}
@@ -46,7 +46,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                   onClick={() => onNavigate('shop')}
                   className="w-full sm:w-auto px-7 py-3 bg-[#1F1D1B] active:bg-[#38322C] text-[#FAF8F5] text-xs font-semibold tracking-widest uppercase rounded-xl shadow-md transition-all duration-300 flex items-center justify-center gap-2 group"
                 >
-                  <span>Shop Now</span>
+                  <span>Shop Cookware</span>
                   <ArrowRight className="w-4 h-4 text-[#C5A059] group-hover:translate-x-1 transition-transform" />
                 </button>
 
@@ -58,51 +58,20 @@ export const HomePage: React.FC<HomePageProps> = ({
                 </button>
               </div>
 
-              {/* Trust Micro Indicators */}
-              <div className="pt-4 sm:pt-6 border-t border-[#E8DFD8] grid grid-cols-3 gap-2 sm:gap-4 text-center sm:text-left">
-                <div className="p-2 sm:p-0 rounded-lg bg-white/60 sm:bg-transparent">
-                  <p className="text-base sm:text-lg font-bold text-[#1F1D1B]">100%</p>
-                  <p className="text-[10px] sm:text-[11px] text-[#786A5E] uppercase tracking-wider">Modest Cut</p>
-                </div>
-                <div className="p-2 sm:p-0 rounded-lg bg-white/60 sm:bg-transparent">
-                  <p className="text-base sm:text-lg font-bold text-[#1F1D1B]">COD</p>
-                  <p className="text-[10px] sm:text-[11px] text-[#786A5E] uppercase tracking-wider">All Bangladesh</p>
-                </div>
-                <div className="p-2 sm:p-0 rounded-lg bg-white/60 sm:bg-transparent">
-                  <p className="text-base sm:text-lg font-bold text-[#1F1D1B]">7 Days</p>
-                  <p className="text-[10px] sm:text-[11px] text-[#786A5E] uppercase tracking-wider">Easy Exchange</p>
-                </div>
-              </div>
             </div>
 
             {/* Right Hero Image Area */}
             <div className="lg:col-span-6 relative mt-4 lg:mt-0">
               <div className="relative mx-auto max-w-sm sm:max-w-md lg:max-w-none">
                 <div className="absolute -inset-2 sm:-inset-3 bg-gradient-to-tr from-[#E6D4B5] to-[#FAF8F5] rounded-3xl opacity-70 blur-xs -rotate-1" />
-                <div className="relative rounded-2xl overflow-hidden shadow-xl border border-[#FFFFFF] aspect-[5/6] bg-[#EFE8DF]">
+                <div className="relative rounded-2xl overflow-hidden shadow-xl border border-[#FFFFFF] aspect-[3/2] bg-[#EFE8DF]">
                   <img
                     src="/arabian-saaj-hero.png"
-                    alt="Arabian Saaj modest fashion collection"
+                    alt="Premium cookware collection"
                     referrerPolicy="no-referrer"
                     className="w-full h-full object-cover object-top hover:scale-105 transition-transform duration-700"
                   />
 
-                  <div className="absolute bottom-3 left-3 right-3 sm:bottom-5 sm:left-5 sm:right-5 bg-white/95 backdrop-blur-md p-3 sm:p-4 rounded-xl border border-[#E8DFD8] shadow-lg flex items-center justify-between">
-                    <div>
-                      <p className="text-[9px] sm:text-[10px] text-[#9E8E81] uppercase tracking-widest font-semibold">
-                        Signature Collection
-                      </p>
-                      <h4 className="text-xs sm:text-sm font-bold text-[#1F1D1B] truncate max-w-[180px] sm:max-w-none">
-                        Dubai Royal Crepe & Medina Silk
-                      </h4>
-                    </div>
-                    <button
-                      onClick={() => onNavigate('shop')}
-                      className="px-3 py-1.5 bg-[#1F1D1B] text-[#FAF8F5] text-[10px] sm:text-[11px] tracking-wider uppercase font-semibold rounded-lg hover:bg-[#B38838] transition-colors"
-                    >
-                      View
-                    </button>
-                  </div>
                 </div>
               </div>
             </div>
@@ -213,27 +182,27 @@ export const HomePage: React.FC<HomePageProps> = ({
         )}
       </section>
 
-      {/* ----------------- EDITORIAL MODEST SHOWCASE ----------------- */}
+      {/* ----------------- COLLECTION SHOWCASE ----------------- */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="relative min-h-[440px] sm:min-h-[500px] lg:min-h-[540px] rounded-2xl sm:rounded-3xl overflow-hidden border border-[#D8C7B5] shadow-xl text-[#FAF8F5]">
           <img
-            src="/arabian-saaj-editorial.png"
-            alt="Arabian Saaj modest fashion collection in mauve and black"
-            className="absolute inset-0 h-full w-full object-cover object-[center_54%]"
+            src="/uploads/cookware-09-natural-tri-ply.jpg"
+            alt="Stainless steel cookware collection"
+            className="absolute inset-0 h-full w-full object-cover object-center"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#1F1D1B]/85 via-[#1F1D1B]/65 to-[#1F1D1B]/5" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#1F1D1B]/80 via-[#1F1D1B]/55 to-[#1F1D1B]/5" />
 
           <div className="relative z-10 flex min-h-[440px] items-center px-5 py-10 sm:min-h-[500px] sm:px-12 sm:py-14 lg:min-h-[540px] lg:px-16">
             <div className="max-w-2xl space-y-4">
               <span className="text-[#E4BD72] text-[10px] sm:text-xs uppercase tracking-[0.25em] font-semibold">
-                The Arabian Saaj Craft
+                Maku Collection
               </span>
               <h2 className="text-2xl sm:text-4xl lg:text-5xl font-bold leading-tight text-white drop-shadow-md">
-                Designed for the Woman of Modesty & Grace
+                Cookware for Every Kitchen
               </h2>
               <p className="text-xs sm:text-sm text-white/95 leading-relaxed font-medium max-w-xl drop-shadow">
-                We believe modest fashion should never compromise on luxury, quality, or tactile comfort.
-                Every piece in our collection—from breathable everyday crinkle scarves to embellished bridal kaftans—is chosen with deep reverence for modesty and feminine grace.
+                Discover cookware and kitchen essentials chosen for dependable everyday cooking.
+                From durable stainless-steel pots to versatile non-stick sets, find the right pieces for your home.
               </p>
               <div className="pt-2">
                 <button

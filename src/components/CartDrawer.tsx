@@ -79,7 +79,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onCheckout, onNavigateSh
                       Your cart is empty
                     </h3>
                     <p className="text-[11px] sm:text-xs text-[#8C7C6E] mt-1 max-w-xs leading-relaxed">
-                      Discover our modest collection of luxury hijabs, abayas, niqabs, and scarves.
+                      Find cookware, pressure cookers, rice cookers, and kitchen appliances for your home.
                     </p>
                   </div>
                   <button

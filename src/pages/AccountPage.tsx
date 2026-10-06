@@ -3,7 +3,7 @@ import { LogIn, UserPlus, Package, LogOut } from 'lucide-react';
 import { useUserAuth } from '../context/UserAuthContext.tsx';
 import { Order } from '../types.ts';
 
-export const AccountPage: React.FC = () => {
+export const AccountPage: React.FC<{ onNavigate: (page: string) => void }> = ({ onNavigate }) => {
   const { user, isLoading, login, signup, logout, getOrders } = useUserAuth();
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [form, setForm] = useState({ name: '', phone: '', email: '', password: '' });
@@ -69,7 +69,7 @@ export const AccountPage: React.FC = () => {
     <div className="max-w-4xl mx-auto px-4 py-12 space-y-6">
       <div className="bg-white border border-[#E8DFD8] rounded-2xl p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div><p className="text-xs uppercase tracking-widest text-[#B38838]">My Profile</p><h1 className="font-serif text-2xl font-bold mt-1">{user.name}</h1><p className="text-xs text-[#786A5E]">{user.email} {user.phone ? `• ${user.phone}` : ''}</p></div>
-        <button onClick={logout} className="inline-flex items-center gap-2 text-xs text-[#786A5E]"><LogOut className="w-4 h-4" /> Log out</button>
+        <button onClick={() => { logout(); onNavigate('home'); }} className="inline-flex items-center gap-2 text-xs text-[#786A5E]"><LogOut className="w-4 h-4" /> Log out</button>
       </div>
       <div className="bg-white border border-[#E8DFD8] rounded-2xl p-6">
         <div className="flex items-center gap-2 border-b border-[#F0EAE1] pb-4"><Package className="w-5 h-5 text-[#B38838]" /><h2 className="font-serif text-lg font-bold">My Orders ({orders.length})</h2></div>
