@@ -251,10 +251,10 @@
     },
     {
       "_id": "category_9a68cc08-bd44-4c31-912b-cd227019d014",
-      "name": "coking",
-      "slug": "coking",
+      "name": "coking update",
+      "slug": "coking-update",
       "createdAt": "2026-10-06T06:00:58.730Z",
-      "updatedAt": "2026-10-06T06:00:58.730Z"
+      "updatedAt": "2026-10-06T19:19:56.525Z"
     }
   ],
   "orders": []
