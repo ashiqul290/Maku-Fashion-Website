@@ -36,7 +36,7 @@ export const ContactPage: React.FC = () => {
           We Are Here for You
         </h1>
         <p className="text-xs sm:text-sm text-[#786A5E]">
-          Have questions about an abaya length, hijab fabric, or your recent order? Reach out anytime.
+          Have questions about an abaya length hijab fabric, or your recent order? Reach out anytime.
         </p>
       </div>
 

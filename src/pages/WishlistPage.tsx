@@ -71,3 +71,5 @@ export const WishlistPage: React.FC<WishlistPageProps> = ({
     </div>
   );
 };
+
+
